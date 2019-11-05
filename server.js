@@ -18,15 +18,17 @@ function validateAccountID(req, res, next){
   .from('accounts')
   .where('id', '=', req.params.id)
   .first()
-  .then(accounts => {
-    if(!accounts){
+  .then(account => {
+    if(!account){
       res.status(404).json({ error: 'Invalid account ID' })
+    }else{
+      res.locals.account = account
+      next()
     }
   })
   .catch(err => {
     res.status(500).json({ error: 'Internal Server Error' })
   })
-  next()
 }
 
 // ACCOUNT NAME ALREADY EXISTS IN DATABASE
@@ -34,8 +36,10 @@ function validateAccountName(req, res, next){
   knex
   .select('*')
   .from('accounts')
-  .then(accounts => {
-    if(accounts.find(item => item.name === req.body.name)){
+  .where('name', '=', req.body.name)
+  .first()
+  .then(account => {
+    if(account){
       res.status(400).json({ error: 'An account with that name already exists in the database' })
     }else{
       next()
@@ -69,19 +73,8 @@ server.get('/api/accounts', (req, res) => {
 
 // GET SPECIFIED ACCOUNTS
 server.get('/api/accounts/:id', validateAccountID, (req, res) => {
-  knex
-    .select('*')
-    .from('accounts')
-    .where('id', '=', req.params.id)
-    .first()
-    .then(accounts => {
-      if(accounts){
-      res.status(200).json(accounts)
-    }
-    })
-    .catch(err => {
-      res.status(500).json({ error: 'Internal Server Error' })
-    })
+  
+  res.status(200).json(res.locals.account)
 })
 
 // ADD NEW ACCOUNT
